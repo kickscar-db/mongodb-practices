@@ -1,0 +1,6 @@
+# python project
+**/venv
+**/__pycache__
+
+# node project
+**/node_modules

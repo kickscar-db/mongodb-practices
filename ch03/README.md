@@ -1,6 +1,10 @@
-## [mongodb-practices](https://github.com/kickscar-db/mongodb-practices) / ch03. Query & Aggregation
+## [mongodb-practices](https://github.com/kickscar-db/mongodb-practices) / ch03. MongoDB Programming
 
-### 1. 개요
-### 2. Shell과 기본 CRUD 연습
-### 3. Data Type
-### 4. Management
+### 1. Understanding Driver
+#### 1-1. 객체ID
+#### 1-2. BSON
+#### 1-3. Network
+
+### 2. [Python Examples](https://github.com/kickscar-db/mongodb-practices/ch03/2)
+### 3. [Node Examples](https://github.com/kickscar-db/mongodb-practices/ch03/3)
+### 4. [Java(Spring) Examples](https://github.com/kickscar-db/mongodb-practices/ch03/4)

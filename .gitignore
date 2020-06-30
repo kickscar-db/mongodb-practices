@@ -1,10 +1,19 @@
+# for mac
 .DS_Store
 **/.DS_Store
-**/node_modules
 
+# Project exclude paths
+.idea/
+**/*.iml
+**/target
 
-# Editor directories and files
-.idea
+# eclipse
+**/.project
+**/.settings
+**/.classpath
+**/bin
+
+# Other IDE
 .vscode
 *.suo
 *.ntvs*

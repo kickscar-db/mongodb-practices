@@ -1,10 +1,6 @@
-## [mongodb-practices](https://github.com/kickscar-db/mongodb-practices) / ch04. MongoDB Programming
+## [mongodb-practices](https://github.com/kickscar-db/mongodb-practices) / ch04. Scheme Design
 
-### 1. Understanding Driver
-#### 1-1. 객체ID
-#### 1-2. BSON
-#### 1-3. Network
-
-### 2. Python
-### 3. Node
-### 4. Java
+### 1. 개요
+### 2. 실습: 온라인 쇼핑몰
+### 3. 디자인 패턴 
+### 4. 안티 패턴
