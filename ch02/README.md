@@ -5,15 +5,11 @@
 
 #### 1-1. Document
 
-=================================================
-
 #### 1-2. Collection
-
-=================================================
 
 #### 1-3. Database(instance)
 
-=================================================
+
 
 ### 2. Shell과 기본 CRUD 연습
 
@@ -151,38 +147,388 @@ $ mongo
    ```javascript
    > db.user.drop()
    true
-   > db.runCommand( { listCollections: 1.0, nameOnly: true } )
+   > show collections;
+   >
+   ```
+
+   ​	collection list를 출력하기 위해서 show collections 명령을 사용했다. collection이 존재하지 않음을 확인할 수 있다. 
+
+### 3. index & explain()
+
+#### 3-1. 실습 Collection 생성
+
+​	전통적인 RDBMS에서는 쿼리의 성능 향상을 위해 보통 index를 생성하는 것이 보통이다. MongoDB도 마찬가지이며 비교적 쉽게 index를 생성할 수 있다. index의 필요성을 확인하기 위해 대용량 collection을 생성해 보자.
+
+```javascript
+> for(i=0; i<200000; i++){
+  db.numbers.save({num: i});
+}
+WriteResult({ "nInserted" : 1 })
+> 
+```
+
+​	조금 시간이 걸리지만 1분 이내로 끝난다. 확인을 위해 갯 수를 세어 보자.
+
+```javascript
+> db.numbers.count()
+200000
+```
+
+#### 3-2. query
+
+1. 기본 find() 와 it 사용
+
+   ```javascript
+   > db.numbers.find()
+   { "_id" : ObjectId("5efaec69c24235ab07858221"), "num" : 0 }
+   { "_id" : ObjectId("5efaec69c24235ab07858222"), "num" : 1 }
+   { "_id" : ObjectId("5efaec69c24235ab07858223"), "num" : 2 }
+   { "_id" : ObjectId("5efaec69c24235ab07858224"), "num" : 3 }
+   { "_id" : ObjectId("5efaec69c24235ab07858225"), "num" : 4 }
+   { "_id" : ObjectId("5efaec69c24235ab07858226"), "num" : 5 }
+   { "_id" : ObjectId("5efaec69c24235ab07858227"), "num" : 6 }
+   { "_id" : ObjectId("5efaec69c24235ab07858228"), "num" : 7 }
+   { "_id" : ObjectId("5efaec69c24235ab07858229"), "num" : 8 }
+   { "_id" : ObjectId("5efaec69c24235ab0785822a"), "num" : 9 }
+   { "_id" : ObjectId("5efaec69c24235ab0785822b"), "num" : 10 }
+   { "_id" : ObjectId("5efaec69c24235ab0785822c"), "num" : 11 }
+   { "_id" : ObjectId("5efaec69c24235ab0785822d"), "num" : 12 }
+   { "_id" : ObjectId("5efaec69c24235ab0785822e"), "num" : 13 }
+   { "_id" : ObjectId("5efaec69c24235ab0785822f"), "num" : 14 }
+   { "_id" : ObjectId("5efaec69c24235ab07858230"), "num" : 15 }
+   { "_id" : ObjectId("5efaec69c24235ab07858231"), "num" : 16 }
+   { "_id" : ObjectId("5efaec69c24235ab07858232"), "num" : 17 }
+   { "_id" : ObjectId("5efaec69c24235ab07858233"), "num" : 18 }
+   { "_id" : ObjectId("5efaec69c24235ab07858234"), "num" : 19 }
+   Type "it" for more
+   > it
+   { "_id" : ObjectId("5efaec69c24235ab07858235"), "num" : 20 }
+   { "_id" : ObjectId("5efaec69c24235ab07858236"), "num" : 21 }
+   { "_id" : ObjectId("5efaec69c24235ab07858237"), "num" : 22 }
+   { "_id" : ObjectId("5efaec69c24235ab07858238"), "num" : 23 }
+   { "_id" : ObjectId("5efaec69c24235ab07858239"), "num" : 24 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823a"), "num" : 25 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823b"), "num" : 26 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823c"), "num" : 27 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823d"), "num" : 28 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823e"), "num" : 29 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823f"), "num" : 30 }
+   { "_id" : ObjectId("5efaec69c24235ab07858240"), "num" : 31 }
+   { "_id" : ObjectId("5efaec69c24235ab07858241"), "num" : 32 }
+   { "_id" : ObjectId("5efaec69c24235ab07858242"), "num" : 33 }
+   { "_id" : ObjectId("5efaec69c24235ab07858243"), "num" : 34 }
+   { "_id" : ObjectId("5efaec69c24235ab07858244"), "num" : 35 }
+   { "_id" : ObjectId("5efaec69c24235ab07858245"), "num" : 36 }
+   { "_id" : ObjectId("5efaec69c24235ab07858246"), "num" : 37 }
+   { "_id" : ObjectId("5efaec69c24235ab07858247"), "num" : 38 }
+   { "_id" : ObjectId("5efaec69c24235ab07858248"), "num" : 39 }
+   Type "it" for more
+   >
+   ```
+
+   기본적으로 find()는 20개씩 doument를 출력하고 it 명령으로 다음 20개를 더 출력할 수 있다.
+
+2. find() 와 조건
+
+   ```javascript
+   > db.numbers.find({num: 9999});
+   { "_id" : ObjectId("5efaec6dc24235ab0785a930"), "num" : 9999 }
+   >
+   ```
+
+3. find() 와 $lt 연산자 사용
+
+   ```javascript
+   > db.numbers.find({num: {'$lt':5}});
+   { "_id" : ObjectId("5efaec69c24235ab07858221"), "num" : 0 }
+   { "_id" : ObjectId("5efaec69c24235ab07858222"), "num" : 1 }
+   { "_id" : ObjectId("5efaec69c24235ab07858223"), "num" : 2 }
+   { "_id" : ObjectId("5efaec69c24235ab07858224"), "num" : 3 }
+   { "_id" : ObjectId("5efaec69c24235ab07858225"), "num" : 4 }
+   >
+   ```
+
+4. find() 와 $lt, $gt 연산자 함께 사용
+
+   ```javascript
+   > db.numbers.find({num: {'$gt':20, '$lt':30}});
+   { "_id" : ObjectId("5efaec69c24235ab07858236"), "num" : 21 }
+   { "_id" : ObjectId("5efaec69c24235ab07858237"), "num" : 22 }
+   { "_id" : ObjectId("5efaec69c24235ab07858238"), "num" : 23 }
+   { "_id" : ObjectId("5efaec69c24235ab07858239"), "num" : 24 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823a"), "num" : 25 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823b"), "num" : 26 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823c"), "num" : 27 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823d"), "num" : 28 }
+   { "_id" : ObjectId("5efaec69c24235ab0785823e"), "num" : 29 }
+   >
+   ```
+
+#### 3-3. profiling with explain()
+
+앞의 쿼리에 explain()를 사용해서 쿼리의 성능을 테스트해 보자.
+
+```javascript
+> db.numbers.find({num: {'$gt':199995}}).explain('executionStats');
+{
+(생략)
+.
+.
+	"executionStats" : {
+		"executionSuccess" : true,
+		"nReturned" : 4,
+		"executionTimeMillis" : 137,
+		"totalKeysExamined" : 0,
+		"totalDocsExamined" : 200000,
+		"executionStages" : {
+			"stage" : "COLLSCAN",
+			"filter" : {
+				"num" : {
+					"$gt" : 199995
+				}
+			},
+.
+.
+(생략)
+}
+```
+
+​	'executionStats' 인자를 통해 explain()을 실행하면, 인덱스 사용여부, 스캔한 문서 수, 쿼리 수행 시간등을 알 수 있다. totalDocsExamined 값을 찾아 보면 4개의 문서를 찾기 위해 전체 문서를 스캔한 것을 알 수 있다.
+
+#### 3-4. index 생성
+
+1. numbers collection에 index를 생성해 보자. index 많은 옵션과 튜닝을 위한 파라미터들이 있다. 여기서는 간단히 num키에 대한 오름차순 index를 생성해 보자.
+
+   ```javascript
+   > db.numbers.ensureIndex({num: 1})
    {
-   	"cursor" : {
-   		"id" : NumberLong(0),
-   		"ns" : "mydb.$cmd.listCollections",
-   		"firstBatch" : [ ]
-     },
-     "ok" : 1
+   	"createdCollectionAutomatically" : false,
+   	"numIndexesBefore" : 1,
+   	"numIndexesAfter" : 2,
+   	"ok" : 1
+   }
+   >
+   ```
+
+2. explain()을 사용한 프로파일링
+
+   ```javascript
+   > db.numbers.find({num: {'$gt':199995}}).explain('executionStats');
+   {
+   (생략)
+   .
+   .
+   	"executionStats" : {
+   		"executionSuccess" : true,
+   		"nReturned" : 4,
+   		"executionTimeMillis" : 11,
+   		"totalKeysExamined" : 4,
+   		"totalDocsExamined" : 4,
+   		"executionStages" : {
+   			"stage" : "FETCH",
+   			"nReturned" : 4,
+   			"executionTimeMillisEstimate" : 0,
+   			"works" : 5,
+   			"advanced" : 4,
+   			"needTime" : 0,
+   			"needYield" : 0,
+   			"saveState" : 0,
+   			"restoreState" : 0,
+   			"isEOF" : 1,
+   			"docsExamined" : 4,
+   			"alreadyHasObj" : 0,
+   .
+   .
+   (생략)
    }
    ```
 
-   ​	collection list를 출력하기 위해서는 runCommand(...) 함수를 사용해야 한다. 결과는 firstBatch이름의 배열에 collection 정보가 들어 있다. 하나의 collection도 존재하지 않음을 확인할 수 있다. 
+   많은 항목이 나타나지만 "executionStages" 섹션에 executionTimeMillisEstimate, docsExamined 항목만 보면 쿼리가 향상되어 있음을 확인할 수 있다.
 
-   
+### 4. Data Type
 
-### 3. Data Type
+=====================
 
-=================================================
+### 5. Management
 
+#### 5-1. Basics
 
+1. 데이터베이스 정보
 
-### 4. Management
+   - show dbs
 
-#### 4-1. MongoDB 시작과 중지
+     ```javascript
+     > show dbs
+     admin   0.000GB
+     config  0.000GB
+     local   0.000GB
+     mydb    0.001GB
+     ```
 
-=================================================
+     전체 database가 리스팅 된다.
 
-#### 4-2. Monitoring
+   - show collections
 
-=================================================
+     ```javascript
+     > show collections
+     numbers
+     user
+     ```
 
-#### 4-3. Security &amp; Authentification
+     지금까지의 실습을 위해 mydb를 사용하고 있기 때문에 mydb의 collection들이 리스팅 된다.
+
+   - stats()
+
+     ```javascript
+     > db.stats()
+     {
+     	"db" : "mydb",
+     	"collections" : 2,
+     	"views" : 0,
+     	"objects" : 200001,
+     	"avgObjSize" : 35.000384998075006,
+     	"dataSize" : 7000112,
+     	"storageSize" : 2383872,
+     	"numExtents" : 0,
+     	"indexes" : 3,
+     	"indexSize" : 4313088,
+     	"scaleFactor" : 1,
+     	"fsUsedSize" : 144439803904,
+     	"fsTotalSize" : 250685575168,
+     	"ok" : 1
+     }
+     >
+     ```
+
+     사용 중인 database mydb의 정보가 출력된다.
+
+     ```javascript
+     > db.numbers.stats();
+     {
+     	"ns" : "mydb.numbers",
+     	"size" : 7000000,
+     	"count" : 200000,
+     	"avgObjSize" : 35,
+     	"storageSize" : 2347008,
+     	"capped" : false,
+     	"wiredTiger" : {
+     		"metadata" : {
+     			"formatVersion" : 1
+     		},
+     .
+     .
+     .
+     (생략)
+     ```
+
+     collection에 대한 정보도 얻을 수 있다.
+
+2. 도움말
+
+   - 현재 사용 중인 database에 사용할 수 있는 명령 보기
+
+     ```javascript
+     > db.help()
+     DB methods:
+     
+     	db.auth(username, password)
+     	db.cloneDatabase(fromhost) - will only function with MongoDB 4.0 and below
+     	db.commandHelp(name) returns the help for the command
+     	db.copyDatabase(fromdb, todb, fromhost) - will only function with MongoDB 4.0 and below
+     	db.createCollection(name, {size: ..., capped: ..., max: ...})
+     	db.createUser(userDocument)
+     	db.createView(name, viewOn, [{$operator: {...}}, ...], {viewOptions})
+     	db.currentOp() displays currently executing operations in the db
+     	db.dropDatabase(writeConcern)
+     	db.dropUser(username)
+     	db.eval() - deprecated
+     	db.fsyncLock() flush data to disk and lock server for backups
+     	db.fsyncUnlock() unlocks server following a db.fsyncLock()
+     	db.getCollection(cname) same as db['cname'] or db.cname
+     	.
+       .
+       .
+     	(생략)
+     > 
+     ```
+
+   - database의 collection에 사용할 수 있는 명령 보기
+
+     ```javascript
+     > db.user.help()
+     DBCollection help
+     	db.user.find().help() - show DBCursor help
+     	db.user.convertToCapped(maxBytes) - calls {convertToCapped:'user', size:maxBytes}} command
+     	db.user.createIndex(keypattern[,options])
+     	db.user.createIndexes([keypatterns], <options>)
+     	db.user.dataSize()
+     	db.user.drop() drop the collection
+     	db.user.dropIndexes()
+     	db.user.ensureIndex(keypattern[,options]) - DEPRECATED, use createIndex() instead
+     	db.user.explain().help() - show explain help
+     	db.user.reIndex()
+     	db.user.find(...).count()
+     	db.user.find(...).limit(n)
+     	db.user.find(...).skip(n)
+     	db.user.find(...).sort(...)
+     	db.user.findOne([query], [fields], [options], [readConcern])
+     	db.user.getDB() get DB object associated with collection
+     	db.user.getPlanCache() get query plan cache associated with collection
+     	db.user.getIndexes()
+     	db.user.insert(obj)
+     	.
+       .
+       .
+     	(생략)
+     > 
+     ```
+
+   - 함수 구현 코드  출력
+
+     ```javascript
+     > db.numbers.insert
+     function(obj, options) {
+         if (!obj)
+             throw Error("no object passed to insert!");
+     
+         var flags = 0;
+     
+         var wc = undefined;
+         var allowDottedFields = false;
+         if (options === undefined) {
+             // do nothing
+         } else if (typeof (options) == 'object') {
+             if (options.ordered === undefined) {
+                 // do nothing, like above
+             } else {
+                 flags = options.ordered ? 0 : 1;
+             }
+     
+             if (options.writeConcern)
+                 wc = options.writeConcern;
+             if (options.allowdotted)
+                 allowDottedFields = true;
+         } else {
+             flags = options;
+         }
+     
+         // 1 = continueOnError, which is synonymous with unordered in the write commands/bulk-api
+         var ordered = ((flags & 1) == 0);
+     
+         if (!wc)
+             wc = this.getWriteConcern();
+     
+         var result = undefined;
+         var startTime =
+             (typeof (_verboseShell) === 'undefined' || !_verboseShell) ? 0 : new Date().getTime();
+     	.
+       .
+       .
+     	(생략)
+     >
+     ```
+
+#### 5-2. Security &amp; Authentification
 
    1. admin 계정 추가
 
