@@ -9,20 +9,14 @@ mongoose.connect(db.url, {
 })
     .then(() => {
         console.log('Successfully connected to mongodb')
-        mongoose.connection.close()
+        //mongoose.connection.close()
     })
     .catch(e => console.error(e));
 
 
 const user = new mongoose.Schema({
-    name: String,
     email: String,
-    password: String,
-    gender: String,
-    joinDate: {
-        type: Date,
-        default: Date.now
-    }
+    name: String
 },{
     versionKey: false
 });

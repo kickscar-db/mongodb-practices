@@ -1,3 +1,13 @@
-import user from "../model/user.js"
+import User from "../model/user.js"
 
-console.log(user)
+console.log(User)
+
+User.create({
+    name: '둘리',
+    email: 'kickscar@gmail.com'
+}, function(err, user){
+    if(err)
+        throw err;
+
+    console.log(user);
+})
