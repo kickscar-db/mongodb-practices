@@ -24,6 +24,7 @@ class TestPymongo(unittest.TestCase):
         self.assertEqual(result['value'], 10)
 
     def tearDown(self):
+        self.collection.drop();
         self.client.close()
 
 
